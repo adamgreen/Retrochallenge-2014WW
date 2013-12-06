@@ -1,0 +1,11 @@
+==December 5th, 2013 - Project Overview
+
+I had so much fun with my first
+[[https://github.com/adamgreen/Retrochallenge-2013SC#readme | Retrochallenge attempt this past June]]
+that I have decided that I would like to try something again for the [[http://www.retrochallenge.net | 2014 Winter
+Warmup Retrochallenge]] this upcoming January.
+
+I haven't quite decided what my project will be for this challenge but I think it will most likely have something to do
+with:
+* Apple ][ computers
+* [[https://github.com/jmechner/Prince-of-Persia-Apple-II | Jordan Mechner's Prince of Persia]]
