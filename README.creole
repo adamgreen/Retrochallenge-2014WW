@@ -1,3 +1,34 @@
+==January 2nd, 2014 - Start of Apple ][c Cleanup
+{{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140102-01.jpg}}\\
+
+I have decided that my first project for this retrochallenge should be a cleanup of an Apple ][c lent to me by a friend
+last year.  What you see above is the beginning of that project.  I took the machine apart and then stripped down the
+outside plastics and cleaned them with **Clorox Clean-Up with Bleach** as described by
+[[http://www.toddfun.com/2012/05/28/apple-ii-plus-from-1982-teardown-repair-cleanup-and-demonstration/ | Todd Harrison in this blog post.]]
+This did a great job of removing a couple of decades of grime but doesn't quite have the whitening punch of something
+like [[http://en.wikipedia.org/wiki/Retro_brite | Retr0bright]].  The machine is now clean but still looks its age :)
+
+===Keyboard Next
+Now that I have finished cleaning up the plastics, I have started turning my attention to the keyboard on this
+Apple ][c.  Every key on this machine is sticky and quite difficult to press down.
+[[https://groups.google.com/forum/#!topic/comp.sys.apple2/7abY1blXb1c | This usenet posting]] provides a great
+discussion about this issue.  I have tried pulling off a few key caps and testing out a few of their recommendations and
+have decided that my plan of action will be to:
+* Pull off all of the key caps on the keyboard.
+* Remove the rubber membranes from beneath the key caps.  These were there to reduce the chance of spills making it into
+the keyboard but the membranes in this machine are a bit off center and rub against the key posts.  I don't plan to
+reinstall these membranes since I think they probably lead to more problems than they solve.
+* For each key:
+** Clean any remaining grime from the key cap.
+** Remove the metal U shaped spring from each key switch.
+** Degrease the removed metal spring using bicycle chain cleaner.  Wipe off cleaner.
+** Lubricate the removed metal spring using bicycle chain lubricant.  Wipe off excess lubricant.
+** Reinstall the metal spring back in the key switch.
+
+That's my plan anyway!
+
+
+
 ==January 1st, 2014 - Winter Warmup has Begun!
 ===Out with the New!
 {{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140101-01.jpg}}
