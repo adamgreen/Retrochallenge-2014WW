@@ -1,3 +1,37 @@
+==January 7th, 2014 - Apple ][c Cleanup Completed
+I was out of the country for a few days since my last post but last night I was able to get back into the retro swing of
+things and finished cleaning up the keyboard for the Apple ][c.  Once that was done, I got it all back together and
+started playing some Prince of Persia on the machine.  All good things must end with Prince of Persia :)
+
+===Keyboard Teardown and Cleanup
+{{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140107-01.jpg}}\\
+
+I started the Apple ][c keyboard cleanup project by removing all of the keycaps so that the rubber mat beneath could be
+removed and the key switches exposed.  I used a plastic spludger to get underneath each key to pry it off of its key
+post.  These were pretty easy to pop off.  The only key which put up a fight was the space bar.  It was connected in
+three places.  The outer two points were hinge points for a metal rod which extends the length of the space bar.  This
+metal rod needed to be popped out of these hinge points first and then the space bar popped off of the central key post
+easily like the rest of the keys.\\
+
+{{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140107-02.jpg}}\\
+{{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140107-06.jpg}}\\
+
+With the mat removed, I could get a much better look at the key switches.\\
+{{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140107-04.jpg}}
+{{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140107-05.jpg}}
+{{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140107-03.jpg}}\\
+
+In the above photos, I have added arrows to highlight the points where the key post contacts the spring as it is
+depressed to give the user tactile feedback of a key press.  It is this contact which leads to the stickiness in the key
+travel.  I removed each of these metal springs, cleaned them, oiled them, and then re-installed them.  Most of the times
+this would correct the problem.  However, some of the times the spring was bent from use and needed to be straightened
+out a bit to further reduce the friction with the key post.
+
+===On to Next Project
+Now that the Apple ][c cleanup is complete, it's time to find the next project to work on for this Retrochallenge Winter
+Warmup.
+
+
 ==January 2nd, 2014 - Start of Apple ][c Cleanup
 {{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140102-01.jpg}}\\
 
