@@ -5,7 +5,7 @@ I bought the above Apple ][ Karateka 5.25" disk on eBay a few months ago.  My ne
 a question that I have about this disk, "Is it legit or pirated?"
 
 ===Bad Thing About this Disk
-Why is this disk write-enabled?  I wouldn't have expected a genuine disk to even have a write enable cutout.
+I wouldn't have expected a genuine disk to even have a write enable cutout.
 [[http://www.mobygames.com/game/apple2/karateka/cover-art/gameCoverId,120850/ | This image on Moby Games]] shows a disk
 with the same label but no write enable cutout in the disk.\\
 {{https://raw2.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140110-02.jpg}}\\
