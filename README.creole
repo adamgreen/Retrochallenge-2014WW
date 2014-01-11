@@ -1,3 +1,42 @@
+==January 10th, 2014 - Copied Floppy?
+{{https://raw2.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140110-01.jpg}}\\
+
+I bought the above Apple ][ Karateka 5.25" disk on eBay a few months ago.  My next Apple ][ related project is to answer
+a question that I have about this disk, "Is it legit or pirated?"
+
+===Bad Thing About this Disk
+Why is this disk write-enabled?  I wouldn't have expected a genuine disk to even have a write enable cutout.
+[[http://www.mobygames.com/game/apple2/karateka/cover-art/gameCoverId,120850/ | This image on Moby Games]] shows a disk
+with the same label but no write enable cutout in the disk.\\
+{{https://raw2.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140110-02.jpg}}\\
+
+===Good Things About this Disk
+The label on the disk definitely looks like it could almost be 30 years old (Karateka was originally released in 1984.)
+It also appears to have seen a lot of use over the years.
+
+The disk does boot and play.\\
+{{https://raw2.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140110-03.jpg}}\\
+
+The [[http://www.geek.com/games/karateka-apple-ii-floppy-disk-had-a-side-b-played-game-upside-down-1509335/ | Karateka easter egg]]
+is also functional on this disk.  When I insert the disk into the drive upside down, the game boots but the video is
+upside down as it should be.\\
+{{https://raw2.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140110-04.jpg}}\\
+
+The disk is copy protected.  If I try to use ADTPro to extract a .DSK image for this disk, I just get a bunch of I/O
+errors.  I would expect a pirated disk to be easily copied.\\
+{{https://raw2.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140110-05.jpg}}\\
+
+I extracted a low level nibble image of the disk using ADTPro, booted from it with the Virtual II emulator and then
+broke into the boot loading process to examine its machine code.  It appears to match the code
+[[http://www.hackzapple.com/phpBB2/viewtopic.php?t=420&highlight=karateka#top | described here]] by the HackZapple team
+as they reverse engineered and circumvented the Karateka disk copy protection.
+{{https://raw2.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140110-06.png}}\\
+
+===Final Verdict
+The data pointing to the disk being genuine appears to overwhelm my original piracy concerns.
+
+
+
 ==January 7th, 2014 - Apple ][c Cleanup Completed
 I was out of the country for a few days since my last post but last night I was able to get back into the retro swing of
 things and finished cleaning up the keyboard for the Apple ][c.  Once that was done, I got it all back together and
