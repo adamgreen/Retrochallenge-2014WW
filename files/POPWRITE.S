@@ -1,0 +1,616 @@
+; Copyright 2012 Adam Green (http://mbed.org/users/AdamGreen/)
+;
+;  Licensed under the Apache License, Version 2.0 (the "License");
+;  you may not use this file except in compliance with the License.
+;  You may obtain a copy of the License at
+;
+;      http://www.apache.org/licenses/LICENSE-2.0
+;
+;  Unless required by applicable law or agreed to in writing, software
+;  distributed under the License is distributed on an "AS IS" BASIS,
+;  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;  See the License for the specific language governing permissions and
+;  limitations under the License.
+;
+        XC ; Uses 65c02 instructions
+
+COUT    EQU $FDED
+GETLN   EQU $FD6A
+PROMPT  EQU $33
+IBUF    EQU $200
+IBUFP   EQU $1FF
+PRODOS  EQU $BF00
+PRBYTE  EQU $FDDA
+; ZERO PAGE LOCATIONS
+SLOT    EQU $FD
+PTR     EQU $FE
+PTRLO   EQU $FE
+PTRHI   EQU $FF
+; CONSTANTS
+NIBLO   EQU $00 ; EXPECTED 24-BIT SIZE OF
+NIBMID  EQU $8E ;  NIBBLE IMAGE (232,960 BYTES)
+NIBHI   EQU $03
+RDPGS   EQU $1A ; NUMBER OF PAGES IN NIB TRACK
+; PRODOS COMMANDS
+OPEN    EQU $C8
+READ    EQU $CA
+CLOSE   EQU $CC
+SIZE    EQU $D1
+;
+; DATA LOCATED BELOW CODE.  ADDRESS EQUS HERE
+; 6656 BYTE READ BUFFER FOR 1 TRACK OF DATA
+RDBUFF  EQU $6600
+RDBUFFE EQU $8000
+; VARIABLE AREA
+ERRCODE EQU $8000 ; ERROR DISPLAYED BY PERROR
+DRIVE   EQU $8001
+TRACK   EQU $8002
+TRKBCD  EQU $8003
+; VARIABLES USED FOR FINDING RUNS
+DATALO  EQU $8004 ; START OF CURRENT DATA RUN
+DATAHI  EQU $8005
+SYNCLO  EQU $8006 ; START OF CURRENT SYNC RUN
+SYNCHI  EQU $8007
+VALLO   EQU $8008 ; USE AS GENERIC 16-BIT VALUE
+VALHI   EQU $8009
+; STATES USED DURING RUN PROCESSING
+ST_DATA EQU 0 ; IN DATA BYTES
+ST_BOTH EQU 1 ; MIGHT BE DATA OR SYNC
+ST_SYNC EQU 2 ; IN SYNC BYTES
+; SEEK RELATED VARIABLES
+CURRTRK EQU $800A
+TMPTRK  EQU $800B
+SAVTRK  EQU $800C
+I       EQU $800D
+; PRODOS 1K FILE BUFFER
+FBUFF   EQU $8100 ; - $84FF
+
+        ORG $9100
+;
+; MAIN ENTRY POINT
+        LDA PROMPT
+        PHA
+        LDA #$A0
+        STA PROMPT
+        JSR GETFNAM
+M2      JSR CONVSTR
+        JSR FOPEN
+        BCS MAINX
+        JSR GETSLOT
+        JSR GETDRV
+        STZ TRACK
+        LDA #1
+        STA TRKBCD
+        LDA #$50
+        STA CURRTRK
+MLOOP   JSR PRREAD
+        JSR TRACKRD
+        JSR INITD
+        JSR TRPRO
+        JSR SEEK
+        JSR PRWRITE
+        JSR TRACKWR
+        INC TRACK
+        LDA TRACK
+        CMP #35
+        BEQ MAINE
+        SED
+        CLC
+        LDA TRKBCD
+        ADC #$01
+        STA TRKBCD
+        CLD
+        BRA MLOOP
+MAINE   ; CLEANUP AND EXIT
+        JSR CR
+        JSR DINITD
+        JSR FCLOSE
+MAINX   ; EXIT
+        PLA ; RESTORE PROMPT BEFORE EXIT
+        STA PROMPT
+        RTS
+;
+; A:X=NULL TERMINATED STRING TO PRINT
+PUTS    STX PUTS1
+        STA PUTS2
+        LDX #0
+        PHX
+PUTSL   PLX
+        DB $BD ;LDX ????,X
+PUTS1   DS 1   ; LOW BYTE OF BASEADDR
+PUTS2   DS 1   ; HIGH BYTE OF BASEADDR
+        BEQ PUTSX
+        INX
+        PHX
+        JSR COUT
+        BRA PUTSL
+PUTSX   RTS
+;
+; CONVERT IBUF TO SIZED STRING X=LENGTH
+CONVSTR LDY #$FF
+CSL     LDA IBUFP,Y
+        STA IBUF,Y
+        DEY
+        BNE CSL
+        STX IBUF
+        RTS
+;
+; OPEN PRODOS FILE AND SANITY CHECK
+FOPEN   JSR PRODOS
+        DB OPEN
+        DW OPENP
+        BCC FOPEN1 ; CHECK FOR OPEN ERROR
+        STA ERRCODE
+        LDA #>OPENERR
+        LDX #<OPENERR
+        JSR PERROR
+        SEC ; FLAG ERROR
+        RTS ;  AND RETURN
+FOPEN1  ;GET FILE SIZE
+        LDA RREF
+        STA REF1
+        JSR PRODOS
+        DB SIZE
+        DW SIZEP
+        BCC FOPEN2
+        ; ENCOUNTERED GET_EOF ERROR
+        STA ERRCODE
+        LDA #>SIZERR
+        LDX #<SIZERR
+        JSR PERROR
+        BRA FOPENC
+FOPEN2  ; VERIFY THAT FILE IS 232,960 BYTES LONG
+        LDA SIZELO
+        CMP #NIBLO
+        BNE FOPENE
+        LDA SIZEMID
+        CMP #NIBMID
+        BNE FOPENE
+        LDA SIZEHI
+        CMP #NIBHI
+        BNE FOPENE
+        CLC ; FLAG SUCCESS
+        RTS ;  AND RETURN
+FOPENE  ; HANDLE FILE SIZE MISMATCH
+        LDA #>NOTNIB
+        LDX #<NOTNIB
+        JSR PUTS
+FOPENC  ; CLEANUP ON ERROR
+        JSR FCLOSE
+        SEC ; FLAG ERROR
+        RTS ;  AND RETURN
+OPENERR ASC "OPEN ERROR: "
+        DB 0
+SIZERR  ASC "SIZE ERROR: "
+        DB 0
+NOTNIB  ASC "NOT VALID NIBBLE IMAGE"
+         DB $8D,$00
+; OPEN PARAMETER BLOCK
+OPENP   DB 3
+        DW IBUF ; PATHNAME
+        DW FBUFF ; 1K FILE BUFFER
+RREF    DB 0 ; RETURN REFNUM
+; GET_EOF PARAMETER BLOCK
+SIZEP   DB 2
+REF1    DB 0 ; REFNUM
+SIZELO  DB 0 ; 3-BYTE FILE SIZE
+SIZEMID DB 0
+SIZEHI  DB 0
+        ; PRINT ERROR MESSAGE
+        ; A:X = ADDRESS OF MESSAGE
+        ; ERRCODE = ERROR CODE
+PERROR  JSR PUTS
+        LDA ERRCODE
+        JSR PRBYTE
+        JSR CR
+        RTS
+;CLOSE OPEN PRODOS FILE
+FCLOSE  LDA RREF
+        STA REF2
+        JSR PRODOS
+        DB CLOSE
+        DW CLOSEP
+        RTS
+; CLOSE PARAMETER BLOCK
+CLOSEP  DB 1
+REF2    DB 0 ; REFNUM
+        ; READ TRACK FROM NIBBLE IMAGE
+TRACKRD LDA RREF
+        STA REF3
+        JSR PRODOS
+        DB READ
+        DW READP
+        BCS TRDERR
+        RTS ; RETURN TO CALLER ON SUCCESS
+TRDERR  STA ERRCODE
+        LDA #>RDERR ; SHOW READ ERROR
+        LDX #<RDERR
+        JSR PERROR
+        SEC
+        RTS
+RDERR   ASC "READ ERROR: "
+        DB 0
+; READ PARAMETER BLOCK
+READP   DB 4
+REF3    DB 0 ; REFNUM
+        DW RDBUFF ; DATA BUFFER
+        DB 0,RDPGS ; REQUEST LENGTH
+        DB 0,0 ; ACTUAL LENGTH
+        ;PROCESS CURRENT TRACK AND SPLIT INTO DATA
+        ;AND SELF-SYNC BYTE RUNS
+TRPRO   ;INIT POINTERS AND STATE FOR START OF TRACK
+        LDA #<RDBUFF
+        STA CURRLO
+        LDA #>RDBUFF
+        STA CURRHI
+        JSR DATAST
+        LDY #ST_DATA
+TPL     ; LOAD NEXT BYTE OF NIBBLE DATA
+        DB $AD ; LD
+CURRLO  DB 0   ;  LOBYTE OF ADDRESS
+CURRHI  DB 0   ;  HIBYTE OF ADDRESS
+        ; STATE DETERMINES WHAT TO DO NEXT
+        CPY #ST_DATA
+        BNE BOTH?
+        ; STATE == DATA
+        ; IF SEE A SYNC BYTE THEN ENTER BOTH STATE
+        CMP #$FF
+        BNE TPNXT
+        JSR SYNCST
+        LDX #3
+        LDY #ST_BOTH
+        BRA TPNXT
+BOTH?   CPY #ST_BOTH
+        BNE SYNC
+        ; STATE == BOTH
+        ; IF NOT SYNC BYTE THEN DATA
+        CMP #$FF
+        BEQ TP1
+        LDY #ST_DATA
+        BRA TPNXT
+TP1     ; HAVE SEEN YET ANOTHER SYNC BYTE
+        DEX
+        BNE TPNXT
+        ; SEEN 4 SO COMPLETE PREV DATA RUN
+        ;  AND START SYNC RUN
+        JSR DATARUN
+        LDY #ST_SYNC
+        BRA TPNXT
+SYNC    ; STATE == SYNC
+        CMP #$FF
+        BEQ TPNXT
+        ; SEEN START OF DATA RUN SO COMPLETE
+        ;  SYNC RUN AND START DATA RUN
+        JSR DATAST
+        JSR SYNCRUN
+        LDY #ST_DATA
+TPNXT   ; INCREMENT CURR POINTER AND LOOP
+        INC CURRLO
+        BNE TPL
+        INC CURRHI
+        ; DONE PROCESSING TRACK?
+        LDA CURRHI
+        CMP #>RDBUFFE
+        BNE TPL
+        ; DONE SO COMPLETE LAST RUN
+        CPY #ST_SYNC
+        BEQ SYNC2
+        ; COMPLETE LAST DATA RUN
+        JSR SYNCST
+        JMP DATARUN
+        ; DON'T SUPPORT ENDING IN SYNC RUN
+SYNC2   LDA #>SYNCERR
+        LDX #<SYNCERR
+        JMP PUTS
+SYNCERR ASC "UNSUPPORTED SELF-SYNC AT END OF TRACK"
+        DB 0
+SYNCST  ; START SYNC RUN
+        LDA CURRLO
+        STA SYNCLO
+        LDA CURRHI
+        STA SYNCHI
+        RTS
+DATAST  ; START DATA RUN
+        LDA CURRLO
+        STA DATALO
+        LDA CURRHI
+        STA DATAHI
+        RTS
+        ; HANDLE RUN OF DATA BYTES
+DATARUN ; DO NOTHING AND RETURN
+        RTS
+        ; HANDLE RUN OF SYNC BYTES
+SYNCRUN ; DETERMINE LENGTH OF RUN
+        SEC
+        LDA DATALO
+        SBC SYNCLO
+        STA VALLO
+        LDA DATAHI
+        SBC SYNCHI
+        STA VALHI
+        ; PREPARE TO FLAG EACH SELF-SYNC BYTE
+        LDA SYNCLO
+        STA SRDSTLO
+        LDA SYNCHI
+        STA SRDSTHI
+        LDX #$7F ; FLAG SELF-SYNC BYTES AS $7F
+SRL     ; LOOP THROUGH EACH SELF-SYNC BYTE & FLAG
+        LDA VALLO ; DONE?
+        ORA VALHI
+        BNE SR1
+        RTS ; RETURN WHEN COUNT IS 0
+SR1     DB $8E ; STX XXXX OPCODE
+SRDSTLO DB 0
+SRDSTHI DB 0
+        ; INCREMENT POINTER TO NEXT BYTE
+        INC SRDSTLO
+        BNE SR2
+        INC SRDSTHI
+SR2     ; DECREMENT COUNT
+        LDA VALLO
+        BNE SR3
+        DEC VALHI
+SR3     DEC VALLO
+        BRA SRL
+PRVAL   ; PRINT 16-BIT VALUE
+        LDA VALHI
+        JSR PRBYTE
+        LDA VALLO
+        JSR PRBYTE
+        RTS
+        ; SEND CR/LF
+CR      LDA #$8D
+        JSR COUT
+        RTS
+;
+; PROMPT USER FOR SLOT #
+GETSLOT LDA #>PROMPT2
+        LDX #<PROMPT2
+        JSR PUTS
+        JSR GETLN
+        CPX #2 ; SLOT# SHOULD BE <= 1 DIGIT
+        BCS GETSLOT
+        CPX #1 ; DEFAULT TO SLOT 6
+        BEQ GS1
+        LDA #$60
+        STA SLOT
+        RTS
+GS1     LDA IBUF ; CHECK SLOT# VALUE
+        CMP #$B1 ; < 1
+        BCC GETSLOT
+        CMP #$B8 ; >= 8
+        BCS GETSLOT
+        ; CONVERT INPUT TO SLOT #
+        SEC
+        SBC #$B0
+        ASL
+        ASL
+        ASL
+        ASL
+        STA SLOT
+        RTS
+PROMPT2 ASC "SLOT#: 6"
+        DB $88,$88,0
+;
+; PROMPT USER FOR DRIVE #
+GETDRV  LDA #>PROMPT3
+        LDX #<PROMPT3
+        JSR PUTS
+        JSR GETLN
+        CPX #2 ; DRIVE# SHOULD BE <= 1 DIGIT
+        BCS GETDRV
+        CPX #1 ; DEFAULT TO DRIVE #1
+        BEQ GD1
+        LDA #1
+        STA DRIVE
+        RTS
+GD1     LDA IBUF ; CHECK DRIVE #
+        CMP #$B1 ; < 1
+        BCC GETDRV
+        CMP #$B3 ; >= 3
+        BCS GETDRV
+        ; CONVERT INPUT TO DRIVE #
+        SEC
+        SBC #$B0
+        STA DRIVE
+        RTS
+PROMPT3 ASC "DRIVE#: 1"
+        DB $88,$88,0
+;
+; PROMPT USER FOR FILENAME
+GETFNAM LDA #>PROMPT1
+        LDX #<PROMPT1
+        JSR PUTS
+        JSR GETLN
+        CPX #63 ; PATH TOO LONG?
+        BCS GF1
+        RTS
+GF1     LDA #>LNGPTH
+        LDX #<LNGPTH
+        JSR PUTS
+        BRA GETFNAM
+PROMPT1 ASC "FILENAME:"
+        DB 0
+LNGPTH  ASC "PATH TOO LONG"
+        DB $8D,$00
+;
+; PRINT READING TRACK MSG
+PRREAD  LDA #>READMSG
+        LDX #<READMSG
+        JSR PUTS
+        JSR PRTRACK
+        JSR REWIND
+        RTS
+READMSG ASC "READING TRACK "
+        DB 0
+;
+; PRINT TRACK NUMBER IN DECIMAL
+PRTRACK LDA TRKBCD
+        LSR
+        LSR
+        LSR
+        LSR
+        BNE PT1
+        LDA #$A0 ; PRINT LEADING 0 AS SPACE
+        JSR COUT
+        BRA PT2
+PT1     CLC
+        ADC #$B0 ; BCD TO ASCII
+        JSR COUT
+PT2     LDA TRKBCD
+        AND #$0F
+        CLC
+        ADC #$B0 ; BCD TO ASCII
+        JSR COUT
+        RTS
+;
+; REWIND CURSOR TO START OF LINE
+REWIND  LDA #>REWTXT
+        LDX #<REWTXT
+        JSR PUTS
+        RTS
+REWTXT  DB $88,$88,$88,$88,$88,$88,$88,$88
+        DB $88,$88,$88,$88,$88,$88,$88,$88,$00
+;
+; PRINT WRITING TRACK MESSAGE
+PRWRITE LDA #>WRITMSG
+        LDX #<WRITMSG
+        JSR PUTS
+        JSR PRTRACK
+        JSR REWIND
+        RTS
+WRITMSG ASC "WRITING TRACK "
+        DB 0
+;
+; INITIALIZE DRIVE
+INITD   LDA SLOT
+        TAX
+        ORA DRIVE
+        TAY
+        LDA $C089,Y ; SELECT DRIVE
+        LDA $C089,X ; SPINDLE ON
+        RTS
+;
+; DEINITIALIZE DRIVE
+DINITD  LDX SLOT
+        LDA $C088,X ; SPINDLE OFF
+        RTS
+;
+; SEEK TO DESIRED TRACK
+; BORROWED FROM ROLAND GUSTAFSSON'S RW18 CODE
+SEEK    ; 2 STEPS PER TRACK
+        LDA TRACK
+        ASL
+        STA TMPTRK
+        ; ALREADY THERE?
+        CMP CURRTRK
+        BEQ SR
+        ; INIT ITERATION COUNT TO 0
+        LDA #0
+        STA I
+SLOOP   ; STEP UNTIL MATCH
+        ; DIFF BETWEEN ACTUAL AND DESIRED
+        LDA CURRTRK
+        STA SAVTRK
+        SEC
+        SBC TMPTRK
+        ; THERE YET?
+        BEQ SDONE
+        BCS S1
+        ; IF ACTUAL < DESIRED
+        EOR #$FF ; DIFF = ABS(DIFF)-1
+        INC CURRTRK
+        BCC S2
+        ; IF ACTUAL > DESIRED
+S1      ADC #$FE ; DIFF -= 2
+        DEC CURRTRK
+        ; USE ITERATION AND TRACK DIFF TO APPLY ACCEL PROFILE
+S2      CMP I
+        BCC S3
+        ; IF TRACKDIFF > I THEN TRACKDIFF = I
+        LDA I
+S3      CMP #12
+        BCS S4
+        ; IF TRACKDIFF < 12 THEN
+        ;  UPDATE DELAY INDEX TO TRACKDIFF
+        TAY
+        ; TURN NEXT STEPPER PHASE ON WHILE
+        ;  LAST IS STILL ON (HALF STEPPING)
+S4      SEC
+        JSR PHAS1
+        LDA DLYTBL1,Y
+        JSR SDELAY
+        ; NOW TURN LAST STEPPER PHASE OFF
+        LDA SAVTRK
+        CLC
+        JSR PHAS2
+        LDA DLYTBL2,Y
+        JSR SDELAY
+        ; LOOP
+        INC I
+        BNE SLOOP ; BRANCH ALWAYS
+        ; DELAY AND TURN STEPPER OFF
+SDONE   JSR SDELAY
+        CLC
+        ; TURN TRACK STEPPER PHASE ON/OFF (BASED ON CARRY
+PHAS1   LDA CURRTRK
+PHAS2   AND #3
+        ROL ; ROTATE IN CARRY BIT
+        ORA SLOT
+        TAX
+        LDA $C080,X
+SR      LDX SLOT
+        RTS
+        ; LOOP BASED DELAY
+SDELAY  LDX #$13
+S5      DEX
+        BNE S5
+        SEC
+        SBC #1
+        BNE SDELAY
+        RTS
+; ACCEL/DECEL DELAY PROFILES
+DLYTBL1 DB $01,$30,$28,$24,$20,$1E
+        DB $1D,$1C,$1C,$1C,$1C,$1C
+DLYTBL2 DB $70,$2C,$26,$22,$1F,$1E
+        DB $1D,$1C,$1C,$1C,$1C,$1C
+;
+; WRITE NIBBLE DATA TO TRACK
+; COPIED FROM BENEATH APPLE PRODOS BY DON WORTH ET AL
+TRACKWR SEI
+        STZ PTRLO
+        LDA #>RDBUFF
+        STA PTRHI
+        LDY #0
+        LDX SLOT
+        SEC
+        LDA $C08D,X ; PREP FOR WRITE
+        LDA $C08E,X
+        BMI TWE ; CHECK WRITE PROTECT
+        LDA #$FF
+        STA $C08F,X ; SET WRITE MODE
+        CMP $C08C,X
+        NOP
+        JMP TWL1
+TW1     EOR #$80 ; SLIP HIBIT BACK ON
+        NOP ; DELAY 8 EXTRA CLOCKS
+        NOP
+        JMP TW2
+TWL1    PHA ; DELAY
+        PLA
+TWL2    LDA (PTR),Y ; NEXT NIBBLE
+        CMP #$80 ; IS SELF-SYNC?
+        BCC TW1
+        NOP
+TW2     STA $C08D,X ; WRITE NIBBLE
+        CMP $C08C,X
+        INY
+        BNE TWL1
+        INC PTRHI
+        BPL TWL2
+        LDA $C08E,X ; SWITCH BACK TO READ MODE
+        LDA $C08C,X
+        CLC ; FLAG SUCCESS
+TWE     CLI
+        RTS
+        SAV POPWRITE.BIN
