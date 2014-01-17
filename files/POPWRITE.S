@@ -66,7 +66,7 @@ I       EQU $800D
 ; PRODOS 1K FILE BUFFER
 FBUFF   EQU $8100 ; - $84FF
 
-        ORG $9100
+        ORG $2000
 ;
 ; MAIN ENTRY POINT
         LDA PROMPT
