@@ -12,8 +12,6 @@
 ;  See the License for the specific language governing permissions and
 ;  limitations under the License.
 ;
-        XC ; Uses 65c02 instructions
-
 COUT    EQU $FDED
 GETLN   EQU $FD6A
 PROMPT  EQU $33
@@ -79,7 +77,8 @@ M2      JSR CONVSTR
         BCS MAINX
         JSR GETSLOT
         JSR GETDRV
-        STZ TRACK
+        LDA #0
+        STA TRACK
         LDA #1
         STA TRKBCD
         LDA #$50
@@ -101,7 +100,7 @@ MLOOP   JSR PRREAD
         ADC #$01
         STA TRKBCD
         CLD
-        BRA MLOOP
+        BCC MLOOP ; Equivalent to BRA
 MAINE   ; CLEANUP AND EXIT
         JSR CR
         JSR DINITD
@@ -114,17 +113,17 @@ MAINX   ; EXIT
 ; A:X=NULL TERMINATED STRING TO PRINT
 PUTS    STX PUTS1
         STA PUTS2
-        LDX #0
-        PHX
-PUTSL   PLX
-        DB $BD ;LDX ????,X
+PUTSL   DB $AD ;LDA ????
 PUTS1   DS 1   ; LOW BYTE OF BASEADDR
 PUTS2   DS 1   ; HIGH BYTE OF BASEADDR
         BEQ PUTSX
-        INX
-        PHX
-        JSR COUT
-        BRA PUTSL
+        INC PUTS1
+        BNE PUTSS
+        INC PUTS2
+PUTSS   JSR COUT
+        ; BRA
+        CLC
+        BCC PUTSL
 PUTSX   RTS
 ;
 ; CONVERT IBUF TO SIZED STRING X=LENGTH
@@ -159,7 +158,9 @@ FOPEN1  ;GET FILE SIZE
         LDA #>SIZERR
         LDX #<SIZERR
         JSR PERROR
-        BRA FOPENC
+        ; BRA
+        CLC
+        BCC FOPENC
 FOPEN2  ; VERIFY THAT FILE IS 232,960 BYTES LONG
         LDA SIZELO
         CMP #NIBLO
@@ -260,7 +261,7 @@ CURRHI  DB 0   ;  HIBYTE OF ADDRESS
         JSR SYNCST
         LDX #3
         LDY #ST_BOTH
-        BRA TPNXT
+        BNE TPNXT ; EQUIV TO BRA
 BOTH?   CPY #ST_BOTH
         BNE SYNC
         ; STATE == BOTH
@@ -268,7 +269,7 @@ BOTH?   CPY #ST_BOTH
         CMP #$FF
         BEQ TP1
         LDY #ST_DATA
-        BRA TPNXT
+        BEQ TPNXT ; EQUIV TO BRA
 TP1     ; HAVE SEEN YET ANOTHER SYNC BYTE
         DEX
         BNE TPNXT
@@ -276,7 +277,7 @@ TP1     ; HAVE SEEN YET ANOTHER SYNC BYTE
         ;  AND START SYNC RUN
         JSR DATARUN
         LDY #ST_SYNC
-        BRA TPNXT
+        BNE TPNXT ; EQUIV TO BRA
 SYNC    ; STATE == SYNC
         CMP #$FF
         BEQ TPNXT
@@ -352,7 +353,9 @@ SR2     ; DECREMENT COUNT
         BNE SR3
         DEC VALHI
 SR3     DEC VALLO
-        BRA SRL
+        ; BRA
+        CLC
+        BCC SRL
 PRVAL   ; PRINT 16-BIT VALUE
         LDA VALHI
         JSR PRBYTE
@@ -429,7 +432,9 @@ GETFNAM LDA #>PROMPT1
 GF1     LDA #>LNGPTH
         LDX #<LNGPTH
         JSR PUTS
-        BRA GETFNAM
+        ; BRA
+        CLC
+        BCC GETFNAM
 PROMPT1 ASC "FILENAME:"
         DB 0
 LNGPTH  ASC "PATH TOO LONG"
@@ -454,7 +459,9 @@ PRTRACK LDA TRKBCD
         BNE PT1
         LDA #$A0 ; PRINT LEADING 0 AS SPACE
         JSR COUT
-        BRA PT2
+        ; BRA
+        CLC
+        BCC PT2
 PT1     CLC
         ADC #$B0 ; BCD TO ASCII
         JSR COUT
@@ -581,7 +588,8 @@ DLYTBL2 DB $70,$2C,$26,$22,$1F,$1E
 TRACKWR SEI
         LDA #$80 ; KEEP $80 IN ZEROPAGE
         STA HIMASK
-        STZ PTRLO
+        LDA #$0
+        STA PTRLO
         LDA #>RDBUFF
         STA PTRHI
         LDY #0
