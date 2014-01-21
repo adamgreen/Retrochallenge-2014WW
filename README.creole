@@ -1,3 +1,44 @@
+==January 20th, 2014 - Silencing the Prince of Persia Beeps
+During my [[https://github.com/adamgreen/Retrochallenge-2013SC | 2013 Summer Challenge]] project, I wrote a program, 
+[[https://github.com/adamgreen/Retrochallenge-2013SC/blob/master/files/POPWRITE.BAS | POPWRITE]], to copy low level 
+nibble Prince of Persia disk images to actual 5.25" disks.  This did allow me to get my build of Prince of Persia
+crammed onto actual disks with Roland Gustafsson's 18 sectors per track format instead of the standard 16 sectors per
+track.  However, this disk did exhibit one sporadic issue: sometimes the code would have difficulty reading the data
+from the disk and nasty sounds from the Apple ]['s speaker would ensue until it successfully read the disk.
+
+I figured that I should spend some time during this Winter Warmup trying to determine what might be causing this
+problem.  Right from the start I was suspicious of one thing, **timing**.  On the Apple ][ the software running on the
+actual 6502 processor in the computer must perform a lot of the low level work to actually seek the head, and read/write
+the data.  This requires some very tightly timed disk access code, especially in the write path.  I looked at the
+POPWRITE nibble writing code again and noticed a quirk in the code path used for the insertion of padding bits between
+**self-sync** bytes.
+
+* Each bit on an Apple ][ disk consumes 4 CPU cycles to read/write.
+* A normal encoded byte is therefore 32 CPU cycles (8 bits/byte * 4 cycles/bit)
+* A self-sync byte is a **$FF** byte (8 bits of one) followed by 2 zero bits.  Therefore, it is 40 CPU cycles
+  (32 cycles/byte + 2 bits * 4 cycles/bit) instead of the typical 32.
+* A sequence of these self-sync (minimum of 4) allow the hardware to properly synchronize to byte boundaries in the bit
+  stream on disk.  When reading starts on a track, it could easily start reading bits from within the middle of a byte,
+  causing incorrect data to be read.  These self-sync bytes allow the software to discard such data until it sees a
+  sequence of self-sync bytes, therefore guaranteeing that the reads are now properly synchronized.
+* My original write code in POPWRITE was prepending the 2 zero bits rather than appending them.  This could lead to
+synchronization issues on short self-sync byte sequences.  Longer sequences should have been ok.
+
+{{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140120-01.png}}
+
+I modified the code to properly prepend the 2 zero bits to the self-sync byte sequence and I haven't experienced
+boot issues since.
+
+===Other POPWRITE Updates
+Since I was already in the POPWRITE.S code, I decided to make a few other changes.  Originally I only cared if the code
+worked on my Apple ][e Platinum edition.  This meant that I did foolish things like use 65c02 instructions.  To allow
+the code to run on a larger selection of Apple ][ machines, I decided to make a few changes to the code which included
+removing the use of the 65c02 instructions and restricting the RAM usage to the lower 32k of RAM.  The latest version of
+the POPWRITE sources can now be
+[[https://github.com/adamgreen/Retrochallenge-2014WW/blob/master/files/POPWRITE.S | found here]].
+
+
+
 ==January 10th, 2014 - Copied Floppy?
 {{https://raw2.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140110-01.jpg}}\\
 
