@@ -1,3 +1,48 @@
+==January 23rd, 2014 - CFFA300 Installation
+{{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140123-01.jpg}}
+
+In the time between the 2013 Summer Challenge and this Winter Warmup, I ordered and received one of
+[[http://dreher.net/?s=projects/CFforAppleII&c=projects/CFforAppleII/main.php | Rich Dreher's awesome CFFA3000 cards]]
+to install in my Apple ][e.  I decided what time other than the Winter Warmup would be best to get that sucker installed
+into my machine.
+
+The CFFA3000 is a great addition to any Apple ][ which can accept expansion cards (sorry Apple ][c).  It allows you to
+host both Disk II floppy disk images and ProDOS Smartport hard drive images from more modern Compact Flash and/or USB
+mass storage devices.  No longer do I need to rely on floppy disks for my Apple ][ storage needs :)
+
+The installation of the CFFA3000 into my Apple ][e went without a hitch.  The thing which took me the most time was to
+find my Compact Flash USB adapter so that I could prepare some disk images.  I was very happy to see that the CFFA3000
+worked with all of the Prince of Persia disk images produced by
+[[https://github.com/adamgreen/Prince-of-Persia-Apple-II/blob/build/Notes/pop-build.creole#quick-start | my build system]].
+This includes:
+* **PrinceOfPersia_5.25_SideA.nib** and **PrinceOfPersia_5.25_SideB.nib** formatted using [[https://github.com/adamgreen/Prince-of-Persia-Apple-II/blob/build/Notes/pop-codereview-rw18.creole | Roland Gustafsson RW18 format]] to squeeze 18 sectors per track onto an Apple ][ 5.25" disk (instead of the typical 16).
+* **PrinceOfPersia_3.5.hdv** - a 3.5" disk image.
+
+{{https://raw.github.com/adamgreen/Retrochallenge-2014WW/master/photos/rc2014ww-20140123-02.jpg}}
+
+===Throwing in the Towel
+While I was able to get a few retrocomputer items accomplished during this Winter Warmup, I didn't get to some of my
+more challenge worthy projects so I think it is time for me to throw in the towel and admit defeat.  Luckily there are
+lots of other great retrochallenge projects for me to read up on and dream of how I might do better next time :)
+
+As a quick recap for myself, here are the cleanup items that I did actually accomplish this time:
+* I read both [[http://www.amazon.com/Sophistication-Simplicity-Times-Apple-Computer/dp/0986832278 | Sophistication & Simplicity: The Life and Times of the Apple II Computer]] and 
+[[http://www.amazon.com/CoCo-Colorful-History-Underdog-Computer/dp/1466592478 | CoCo: The Colorful History of Tandy's Underdog Computer]]
+* Cleaned up my Apple ][c and actually put it to use during the warmup.
+* Pulled out the Karateka disk for Apple ][ that I purchased on eBay to give it a play on my newly cleaned Apple ][c.
+* Improved [[https://github.com/adamgreen/Retrochallenge-2014WW/blob/master/files/POPWRITE.S | POPWRITE]], my program
+which allows writing of Prince of Persia low level nibble disk images to actual 5.25" floppy disks.
+* Installed my newly acquire CFFA3000 into my Apple ][e and happily discovered that it made getting my Prince of Persia
+disk images up and running on real hardware a snap...a lot easier that the hoops I jumped through to get it onto 5.25"
+disks.
+
+===Thanks!
+As always thanks to the organizers for pulling together the Retrochallenge, the generous prize donors, all of the
+contestants who keep things so interesting, and the poor soul who has to judge all of these great projects to pick out
+the winner(s).
+
+
+
 ==January 20th, 2014 - Silencing the Prince of Persia Beeps
 During my [[https://github.com/adamgreen/Retrochallenge-2013SC | 2013 Summer Challenge]] project, I wrote a program, 
 [[https://github.com/adamgreen/Retrochallenge-2013SC/blob/master/files/POPWRITE.BAS | POPWRITE]], to copy low level 
